@@ -164,11 +164,11 @@ public:
         regionwise_ground_.reserve(NUM_HEURISTIC_MAX_PTS_IN_PATCH);
         regionwise_nonground_.reserve(NUM_HEURISTIC_MAX_PTS_IN_PATCH);
 
-        pub_revert_pc = Node::create_publisher<sensor_msgs::msg::PointCloud2>("plane", 100);
-        pub_reject_pc = Node::create_publisher<sensor_msgs::msg::PointCloud2>("plane", 100);
-        pub_normal = Node::create_publisher<sensor_msgs::msg::PointCloud2>("plane", 100);
-        pub_noise = Node::create_publisher<sensor_msgs::msg::PointCloud2>("plane", 100);
-        pub_vertical = Node::create_publisher<sensor_msgs::msg::PointCloud2>("plane", 100);
+        pub_revert_pc = Node::create_publisher<sensor_msgs::msg::PointCloud2>("revert", 100);
+        pub_reject_pc = Node::create_publisher<sensor_msgs::msg::PointCloud2>("reject", 100);
+        pub_normal = Node::create_publisher<sensor_msgs::msg::PointCloud2>("normal", 100);
+        pub_noise = Node::create_publisher<sensor_msgs::msg::PointCloud2>("noise", 100);
+        pub_vertical = Node::create_publisher<sensor_msgs::msg::PointCloud2>("vertical", 100);
 
         min_range_z2_ = (7 * min_range_ + max_range_) / 8.0;
         min_range_z3_ = (3 * min_range_ + max_range_) / 4.0;
@@ -437,7 +437,7 @@ void PatchWorkpp<PointT>::reflected_noise_removal(pcl::PointCloud<PointT> &cloud
         double z = cloud_in[i].z;
         double ver_angle_in_deg = atan2(z, r)*180/M_PI;
 
-        if ( ver_angle_in_deg < RNR_ver_angle_thr_ && z < -sensor_height_-0.8 && cloud_in[i].intensity < RNR_intensity_thr_)
+        if ( ver_angle_in_deg < RNR_ver_angle_thr_ && z < sensor_height_ && cloud_in[i].intensity < RNR_intensity_thr_)
         {
             cloud_nonground.push_back(cloud_in[i]);
             noise_pc_.push_back(cloud_in[i]);
@@ -765,7 +765,7 @@ void PatchWorkpp<PointT>::update_elevation_thr(void)
         calc_mean_stdev(update_elevation_[i], update_mean, update_stdev);
         if (i==0) {
             elevation_thr_[i] = update_mean + 3*update_stdev;
-            sensor_height_ = -update_mean;
+            // sensor_height_ = -update_mean;
         }
         else elevation_thr_[i] = update_mean + 2*update_stdev;
 

@@ -9,7 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_definitions(-DTARGET_ROS2)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(PCL REQUIRED COMPONENTS common features filters io kdtree surface)
+find_package(PCL REQUIRED COMPONENTS common filters io kdtree)
 find_package(pcl_conversions REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -28,6 +28,12 @@ ament_target_dependencies(patchworkpp
   std_msgs
   sensor_msgs
   rclcpp_components
+)
+target_link_libraries(patchworkpp
+  ${PCL_COMMON_LIBRARIES}
+  ${PCL_FILTERS_LIBRARIES}
+  ${PCL_IO_LIBRARIES}
+  ${PCL_KDTREE_LIBRARIES}
 )
 rclcpp_components_register_node(patchworkpp
   PLUGIN "patchworkpp::PatchworkppPointXYZI"

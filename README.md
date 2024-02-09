@@ -37,7 +37,7 @@ There is a demo which executes Patchwork++ with sample rosbag file. You can down
 Then, you can run demo as follows.
 ```bash
 # Start Patchwork++
-$ ros2 launch patchworkpp demo.launch
+$ ros2 launch patchworkpp demo.launch.py
 # Start the bag file
 $ ros2 bag play kitti_00_sample.db3
 ```

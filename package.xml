@@ -6,20 +6,24 @@
 
   <maintainer email="sj98lee@kaist.ac.kr">Seungjae Lee</maintainer>
   <license>TODO</license>
-  <build_depend>ros_environment</build_depend>
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>libpcl-all</depend>
+
+  <build_depend>ros_environment</build_depend>
+  <build_depend>libpcl-all-dev</build_depend>
+
+  <depend>libpcl-common</depend>
+  <depend>libpcl-filters</depend>
+  <depend>libpcl-io</depend>
+  <depend>libpcl-kdtree</depend>
   <depend>std_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>sensor_msgs</depend>  
-  <depend >cv_bridge</depend>
+  <depend>cv_bridge</depend>
   <depend>laser_geometry</depend>
   <depend>pcl_conversions</depend>
-  <depend>pcl_ros</depend>
   <depend>rclcpp</depend>
   <depend>rclpy</depend>
-  <depend>rclcpp_components</depend>  
-  <depend>libpcl-all-dev</depend>
+  <depend>rclcpp_components</depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
   <member_of_group>rosidl_interface_packages</member_of_group>
   <exec_depend>rosidl_default_runtime</exec_depend>

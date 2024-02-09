@@ -10,7 +10,6 @@ add_definitions(-DTARGET_ROS2)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common features filters io kdtree surface)
-find_package(pcl_ros REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -18,7 +17,6 @@ find_package(rclcpp_components REQUIRED)
 find_package(Boost 1.54 REQUIRED)
 
 add_library(patchworkpp SHARED src/patchworkpp.cpp)
-target_compile_definitions(patchworkpp PUBLIC "PATCHWORKPP_COMPOSITION_BUILDING_DLL")
 target_include_directories(patchworkpp
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -26,7 +24,6 @@ target_include_directories(patchworkpp
 )
 ament_target_dependencies(patchworkpp
   rclcpp
-  pcl_ros
   pcl_conversions
   std_msgs
   sensor_msgs
@@ -67,7 +64,6 @@ install(DIRECTORY launch config rviz DESTINATION share/${PROJECT_NAME})
 
 ament_export_dependencies(ament_cmake)
 ament_export_dependencies(rclcpp)
-ament_export_dependencies(pcl_ros)
 ament_export_dependencies(pcl_conversions)
 ament_export_dependencies(std_msgs)
 ament_export_dependencies(sensor_msgs)

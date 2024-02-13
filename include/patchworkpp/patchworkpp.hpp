@@ -125,14 +125,10 @@ public:
         RCLCPP_INFO_STREAM(this->get_logger(), "frame_id: " << frame_id_);
 
         // CZM denotes 'Concentric Zone Model'. Please refer to our paper
-        num_sectors_each_zone_ = std::vector<long>{8, 8, 8, 8};
-        new_num_sectors_each_zone_   = std::vector<long>{8, 8, 8, 8}; 
-        num_rings_each_zone_   = std::vector<long>{8, 8, 8, 8};
-        new_num_rings_each_zone_   = std::vector<long>{8, 8, 8, 8};
+        num_sectors_each_zone_ = std::vector<long>{12, 8, 16, 24};
+        num_rings_each_zone_   = std::vector<long>{24, 8, 10, 16};
         elevation_thr_ = std::vector<double>{0.0, 0.0, 0.0, 0.0};
-        new_elevation_thr_ = std::vector<double>{0.0, 0.0, 0.0, 0.0};
         flatness_thr_  = std::vector<double>{0.0, 0.0, 0.0, 0.0};
-        new_flatness_thr_  = std::vector<double>{0.0, 0.0, 0.0, 0.0};
 
         RCLCPP_INFO(rclcpp::get_logger("patchworkpp"), "Num. zones: %d", num_zones_);
 
@@ -246,10 +242,6 @@ private:
 
     // For visualization
     bool visualize_ = true;
-    vector<long> new_num_sectors_each_zone_;
-    vector<long> new_num_rings_each_zone_;
-    vector<double> new_flatness_thr_;
-    vector<double> new_elevation_thr_;
     vector<long> num_sectors_each_zone_;
     vector<long> num_rings_each_zone_;
     vector<double> sector_sizes_;
@@ -637,7 +629,7 @@ void PatchWorkpp<PointT>::estimate_ground(
                 bool is_upright         = ground_uprightness > uprightness_thr_;
                 bool is_not_elevated    = ground_elevation < elevation_thr_[concentric_idx];
                 bool is_flat            = ground_flatness < flatness_thr_[concentric_idx];
-                bool is_near_zone       = concentric_idx < num_rings_of_interest_;
+                bool is_near_zone       = concentric_idx < num_rings_of_interest_; // what is this????
                 bool is_heading_outside = heading < 0.0;
 
                 /*
@@ -658,7 +650,7 @@ void PatchWorkpp<PointT>::estimate_ground(
                 {
                     cloud_nonground += regionwise_ground_;
                 }
-                else if (!is_near_zone)
+                else if (!is_near_zone)//failing to be classified here.
                 {
                     cloud_ground += regionwise_ground_;
                 }
@@ -765,7 +757,7 @@ void PatchWorkpp<PointT>::update_elevation_thr(void)
         calc_mean_stdev(update_elevation_[i], update_mean, update_stdev);
         if (i==0) {
             elevation_thr_[i] = update_mean + 3*update_stdev;
-            // sensor_height_ = -update_mean;
+            sensor_height_ = -update_mean;
         }
         else elevation_thr_[i] = update_mean + 2*update_stdev;
 

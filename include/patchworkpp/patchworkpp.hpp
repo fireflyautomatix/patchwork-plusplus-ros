@@ -86,6 +86,8 @@ public:
         this->declare_parameter<std::string>("frame_id", frame_id_);
         this->declare_parameter<bool>("verbose", verbose_);
         this->declare_parameter<bool>("display_time", display_time_);
+        this->declare_parameter<int>("max_flatness_storage", max_flatness_storage_);
+        this->declare_parameter<int>("max_elevation_storage", max_elevation_storage_);
 
         this->get_parameter<double>("sensor_height", sensor_height_);
         this->get_parameter<int>("num_iter", num_iter_);
@@ -107,6 +109,8 @@ public:
         this->get_parameter<std::string>("frame_id", frame_id_);
         this->get_parameter<bool>("verbose", verbose_);
         this->get_parameter<bool>("display_time", display_time_);
+        this->get_parameter<int>("max_flatness_storage", max_flatness_storage_);
+        this->get_parameter<int>("max_elevation_storage", max_elevation_storage_);
 
         RCLCPP_INFO_STREAM(this->get_logger(), "Inititalizing PatchWork++...");
         RCLCPP_INFO_STREAM(this->get_logger(), "Sensor Height: " << sensor_height_);
@@ -126,7 +130,7 @@ public:
 
         // CZM denotes 'Concentric Zone Model'. Please refer to our paper
         num_sectors_each_zone_ = std::vector<long>{12, 8, 16, 24};
-        num_rings_each_zone_   = std::vector<long>{24, 8, 10, 16};
+        num_rings_each_zone_   = std::vector<long>{16, 8, 10, 16};
         elevation_thr_ = std::vector<double>{0.0, 0.0, 0.0, 0.0};
         flatness_thr_  = std::vector<double>{0.0, 0.0, 0.0, 0.0};
 
@@ -228,7 +232,8 @@ private:
     bool enable_RVPF_= true;
     bool enable_TGR_= true;
 
-    int max_flatness_storage_, max_elevation_storage_;
+    int max_flatness_storage_ = 1000;
+    int max_elevation_storage_ = 1000;
     std::vector<double> update_flatness_[4];
     std::vector<double> update_elevation_[4];
 

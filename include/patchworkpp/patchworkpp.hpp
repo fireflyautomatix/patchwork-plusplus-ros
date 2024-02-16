@@ -77,6 +77,8 @@ public:
         this->declare_parameter<double>("uprightness_thr", uprightness_thr_);
         this->declare_parameter<double>("adaptive_seed_selection_margin", adaptive_seed_selection_margin_);
         this->declare_parameter<double>("RNR_ver_angle_thr", RNR_ver_angle_thr_);
+        this->declare_parameter<double>("RNR_height_thr", RNR_height_thr_);
+        this->declare_parameter<double>("RNR_radius_thr", RNR_radius_thr_);
 
         this->declare_parameter<int>("num_zones", num_zones_);
         this->declare_parameter<double>("th_seeds_v", th_seeds_v_);
@@ -100,6 +102,8 @@ public:
         this->get_parameter<double>("uprightness_thr", uprightness_thr_);
         this->get_parameter<double>("adaptive_seed_selection_margin", adaptive_seed_selection_margin_);
         this->get_parameter<double>("RNR_ver_angle_thr", RNR_ver_angle_thr_);
+        this->get_parameter<double>("RNR_height_thr", RNR_height_thr_);
+        this->get_parameter<double>("RNR_radius_thr", RNR_radius_thr_);
 
         this->get_parameter<int>("num_zones", num_zones_);
         this->get_parameter<double>("th_seeds_v", th_seeds_v_);
@@ -124,6 +128,8 @@ public:
         RCLCPP_INFO_STREAM(this->get_logger(), "Normal vector threshold: " <<  uprightness_thr_);
         RCLCPP_INFO_STREAM(this->get_logger(), "adaptive_seed_selection_margin: " << adaptive_seed_selection_margin_);
         RCLCPP_INFO_STREAM(this->get_logger(), "RNR_ver_angle_thr: " << RNR_ver_angle_thr_);
+        RCLCPP_INFO_STREAM(this->get_logger(), "RNR_height_thr: " << RNR_height_thr_);
+        RCLCPP_INFO_STREAM(this->get_logger(), "RNR_radius_thr: " << RNR_radius_thr_);
         RCLCPP_INFO_STREAM(this->get_logger(), "Num. zones: " << num_zones_);
         RCLCPP_INFO_STREAM(this->get_logger(), "cloud_topic: " << cloud_topic);
         RCLCPP_INFO_STREAM(this->get_logger(), "frame_id: " << frame_id_);
@@ -220,12 +226,14 @@ private:
     double max_range_ = 80.0;
     double min_range_ = 0.0;
     double uprightness_thr_ =  0.707;
-    double adaptive_seed_selection_margin_;
+    double adaptive_seed_selection_margin_ = 1.0;
     double min_range_z2_ = 12.3625; // 12.3625
     double min_range_z3_ = 22.025; // 22.025
     double min_range_z4_ = 41.35; // 41.35
     double RNR_ver_angle_thr_ = -20.0;
     double RNR_intensity_thr_ = 0.2;
+    double RNR_height_thr_ = 0.25;
+    double RNR_radius_thr_ = 80.0;
     bool verbose_  = false;
     bool display_time_ = false; // another verbose option, displays running_time
     bool enable_RNR_ = true;
@@ -285,9 +293,6 @@ private:
             const int zone_idx, const pcl::PointCloud<PointT> &src,
             pcl::PointCloud<PointT> &dst,
             pcl::PointCloud<PointT> &non_ground_dst);
-    void extract_initial_seeds(
-            const int zone_idx, const pcl::PointCloud<PointT> &p_sorted,
-            pcl::PointCloud<PointT> &init_seeds);
     void extract_initial_seeds(
             const int zone_idx, const pcl::PointCloud<PointT> &p_sorted,
             pcl::PointCloud<PointT> &init_seeds, double th_seed);
@@ -382,44 +387,9 @@ void PatchWorkpp<PointT>::extract_initial_seeds(
     }
     double lpr_height = cnt != 0 ? sum / cnt : 0;// in case divide by 0
 
-    // iterate pointcloud, filter those height is less than lpr.height+th_seeds_
+    // iterate pointcloud, filter those height is less than lpr.height+th_seed
     for (int i = 0; i < p_sorted.points.size(); i++) {
         if (p_sorted.points[i].z < lpr_height + th_seed) {
-            init_seeds.points.push_back(p_sorted.points[i]);
-        }
-    }
-}
-
-template<typename PointT> inline
-void PatchWorkpp<PointT>::extract_initial_seeds(
-        const int zone_idx, const pcl::PointCloud<PointT> &p_sorted,
-        pcl::PointCloud<PointT> &init_seeds) {
-    init_seeds.points.clear();
-
-    // LPR is the mean of low point representative
-    double sum = 0;
-    int cnt = 0;
-    int init_idx = 0;
-    if (zone_idx == 0) {
-        for (int i = 0; i < p_sorted.points.size(); i++) {
-            if (p_sorted.points[i].z < adaptive_seed_selection_margin_ * sensor_height_) {
-                ++init_idx;
-            } else {
-                break;
-            }
-        }
-    }
-
-    // Calculate the mean height value.
-    for (int i = init_idx; i < p_sorted.points.size() && cnt < num_lpr_; i++) {
-        sum += p_sorted.points[i].z;
-        cnt++;
-    }
-    double lpr_height = cnt != 0 ? sum / cnt : 0;// in case divide by 0
-
-    // iterate pointcloud, filter those height is less than lpr.height+th_seeds_
-    for (int i = 0; i < p_sorted.points.size(); i++) {
-        if (p_sorted.points[i].z < lpr_height + th_seeds_) {
             init_seeds.points.push_back(p_sorted.points[i]);
         }
     }
@@ -432,9 +402,10 @@ void PatchWorkpp<PointT>::reflected_noise_removal(pcl::PointCloud<PointT> &cloud
     {
         double r = sqrt( cloud_in[i].x*cloud_in[i].x + cloud_in[i].y*cloud_in[i].y );
         double z = cloud_in[i].z;
-        double ver_angle_in_deg = atan2(z, r)*180/M_PI;
+        double ver_angle_in_deg = atan2((z-sensor_height_), r)*180/M_PI;
+        const bool in_geometry = ver_angle_in_deg < RNR_ver_angle_thr_ && z < RNR_height_thr_ && r < RNR_radius_thr_;
 
-        if ( ver_angle_in_deg < RNR_ver_angle_thr_ && z < sensor_height_ && cloud_in[i].intensity < RNR_intensity_thr_)
+        if ( in_geometry && cloud_in[i].intensity < RNR_intensity_thr_)
         {
             cloud_nonground.push_back(cloud_in[i]);
             noise_pc_.push_back(cloud_in[i]);
@@ -762,7 +733,7 @@ void PatchWorkpp<PointT>::update_elevation_thr(void)
         calc_mean_stdev(update_elevation_[i], update_mean, update_stdev);
         if (i==0) {
             elevation_thr_[i] = update_mean + 3*update_stdev;
-            sensor_height_ = -update_mean;
+            // sensor_height_ = -update_mean;
         }
         else elevation_thr_[i] = update_mean + 2*update_stdev;
 
@@ -927,7 +898,7 @@ void PatchWorkpp<PointT>::extract_piecewiseground(
         }
     }
 
-    extract_initial_seeds(zone_idx, src_wo_verticals, ground_pc_);
+    extract_initial_seeds(zone_idx, src_wo_verticals, ground_pc_, th_seeds_);
     estimate_plane(ground_pc_);
 
     // 2. Region-wise Ground Plane Fitting (R-GPF)

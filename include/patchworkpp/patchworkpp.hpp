@@ -79,11 +79,12 @@ public:
         this->declare_parameter<double>("RNR_ver_angle_thr", RNR_ver_angle_thr_);
         this->declare_parameter<double>("RNR_height_thr", RNR_height_thr_);
         this->declare_parameter<double>("RNR_radius_thr", RNR_radius_thr_);
+        this->declare_parameter<double>("RNR_x_thr", RNR_x_thr_);
+        this->declare_parameter<double>("RNR_intensity_thr", RNR_intensity_thr_);
 
         this->declare_parameter<int>("num_zones", num_zones_);
         this->declare_parameter<double>("th_seeds_v", th_seeds_v_);
         this->declare_parameter<double>("th_dist_v", th_dist_v_);
-        this->declare_parameter<double>("RNR_intensity_thr", RNR_intensity_thr_);
         this->declare_parameter<std::string>("cloud_topic", cloud_topic);
         this->declare_parameter<std::string>("frame_id", frame_id_);
         this->declare_parameter<bool>("verbose", verbose_);
@@ -104,11 +105,12 @@ public:
         this->get_parameter<double>("RNR_ver_angle_thr", RNR_ver_angle_thr_);
         this->get_parameter<double>("RNR_height_thr", RNR_height_thr_);
         this->get_parameter<double>("RNR_radius_thr", RNR_radius_thr_);
+        this->get_parameter<double>("RNR_x_thr", RNR_x_thr_);
+        this->get_parameter<double>("RNR_intensity_thr", RNR_intensity_thr_);
 
         this->get_parameter<int>("num_zones", num_zones_);
         this->get_parameter<double>("th_seeds_v", th_seeds_v_);
         this->get_parameter<double>("th_dist_v", th_dist_v_);
-        this->get_parameter<double>("RNR_intensity_thr", RNR_intensity_thr_);
         this->get_parameter<std::string>("cloud_topic", cloud_topic);
         this->get_parameter<std::string>("frame_id", frame_id_);
         this->get_parameter<bool>("verbose", verbose_);
@@ -130,6 +132,8 @@ public:
         RCLCPP_INFO_STREAM(this->get_logger(), "RNR_ver_angle_thr: " << RNR_ver_angle_thr_);
         RCLCPP_INFO_STREAM(this->get_logger(), "RNR_height_thr: " << RNR_height_thr_);
         RCLCPP_INFO_STREAM(this->get_logger(), "RNR_radius_thr: " << RNR_radius_thr_);
+        RCLCPP_INFO_STREAM(this->get_logger(), "RNR_x_thr: " << RNR_x_thr_);
+        RCLCPP_INFO_STREAM(this->get_logger(), "RNR_intensity_thr: " << RNR_intensity_thr_);
         RCLCPP_INFO_STREAM(this->get_logger(), "Num. zones: " << num_zones_);
         RCLCPP_INFO_STREAM(this->get_logger(), "cloud_topic: " << cloud_topic);
         RCLCPP_INFO_STREAM(this->get_logger(), "frame_id: " << frame_id_);
@@ -234,6 +238,7 @@ private:
     double RNR_intensity_thr_ = 0.2;
     double RNR_height_thr_ = 0.25;
     double RNR_radius_thr_ = 80.0;
+    double RNR_x_thr_ = 1.0;
     bool verbose_  = false;
     bool display_time_ = false; // another verbose option, displays running_time
     bool enable_RNR_ = true;
@@ -403,7 +408,10 @@ void PatchWorkpp<PointT>::reflected_noise_removal(pcl::PointCloud<PointT> &cloud
         double r = sqrt( cloud_in[i].x*cloud_in[i].x + cloud_in[i].y*cloud_in[i].y );
         double z = cloud_in[i].z;
         double ver_angle_in_deg = atan2((z-sensor_height_), r)*180/M_PI;
-        const bool in_geometry = ver_angle_in_deg < RNR_ver_angle_thr_ && z < RNR_height_thr_ && r < RNR_radius_thr_;
+        const bool in_geometry = ver_angle_in_deg < RNR_ver_angle_thr_ && 
+                                 z < RNR_height_thr_ && 
+                                 r < RNR_radius_thr_ &&
+                                 cloud_in[i].x < RNR_x_thr_;
 
         if ( in_geometry && cloud_in[i].intensity < RNR_intensity_thr_)
         {

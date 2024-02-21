@@ -66,60 +66,49 @@ public:
     PatchWorkpp(const rclcpp::NodeOptions &options)
         : Node("patchworkpp", options) {
         // Init ROS related
-
-        this->declare_parameter<double>("sensor_height", sensor_height_);
-        this->declare_parameter<int>("num_iter", num_iter_);
-        this->declare_parameter<int>("num_lpr", num_lpr_);
-        this->declare_parameter<int>("num_min_pts", num_min_pts_);
-        this->declare_parameter<double>("th_seeds", th_seeds_);
-        this->declare_parameter<double>("th_dist", th_dist_);
-        this->declare_parameter<double>("max_range", max_range_);
-        this->declare_parameter<double>("min_range", min_range_);
-        this->declare_parameter<double>("uprightness_thr", uprightness_thr_);
-        this->declare_parameter<double>("adaptive_seed_selection_margin", adaptive_seed_selection_margin_);
-        this->declare_parameter<double>("RNR_ver_angle_thr", RNR_ver_angle_thr_);
-        this->declare_parameter<double>("RNR_height_thr", RNR_height_thr_);
-        this->declare_parameter<double>("RNR_radius_thr", RNR_radius_thr_);
-        this->declare_parameter<double>("RNR_x_thr", RNR_x_thr_);
-        this->declare_parameter<double>("RNR_intensity_thr", RNR_intensity_thr_);
-
-        this->declare_parameter<int>("num_zones", num_zones_);
-        this->declare_parameter<double>("th_seeds_v", th_seeds_v_);
-        this->declare_parameter<double>("th_dist_v", th_dist_v_);
-        this->declare_parameter<std::string>("cloud_topic", cloud_topic);
-        this->declare_parameter<std::string>("frame_id", frame_id_);
-        this->declare_parameter<bool>("verbose", verbose_);
-        this->declare_parameter<bool>("display_time", display_time_);
-        this->declare_parameter<int>("max_flatness_storage", max_flatness_storage_);
-        this->declare_parameter<int>("max_elevation_storage", max_elevation_storage_);
-
-        this->get_parameter<double>("sensor_height", sensor_height_);
-        this->get_parameter<int>("num_iter", num_iter_);
-        this->get_parameter<int>("num_lpr", num_lpr_);
-        this->get_parameter<int>("num_min_pts", num_min_pts_);
-        this->get_parameter<double>("th_seeds", th_seeds_);
-        this->get_parameter<double>("th_dist", th_dist_);
-        this->get_parameter<double>("max_range", max_range_);
-        this->get_parameter<double>("min_range", min_range_);
-        this->get_parameter<double>("uprightness_thr", uprightness_thr_);
-        this->get_parameter<double>("adaptive_seed_selection_margin", adaptive_seed_selection_margin_);
-        this->get_parameter<double>("RNR_ver_angle_thr", RNR_ver_angle_thr_);
-        this->get_parameter<double>("RNR_height_thr", RNR_height_thr_);
-        this->get_parameter<double>("RNR_radius_thr", RNR_radius_thr_);
-        this->get_parameter<double>("RNR_x_thr", RNR_x_thr_);
-        this->get_parameter<double>("RNR_intensity_thr", RNR_intensity_thr_);
-
-        this->get_parameter<int>("num_zones", num_zones_);
-        this->get_parameter<double>("th_seeds_v", th_seeds_v_);
-        this->get_parameter<double>("th_dist_v", th_dist_v_);
-        this->get_parameter<std::string>("cloud_topic", cloud_topic);
-        this->get_parameter<std::string>("frame_id", frame_id_);
-        this->get_parameter<bool>("verbose", verbose_);
-        this->get_parameter<bool>("display_time", display_time_);
-        this->get_parameter<int>("max_flatness_storage", max_flatness_storage_);
-        this->get_parameter<int>("max_elevation_storage", max_elevation_storage_);
-
         RCLCPP_INFO_STREAM(this->get_logger(), "Inititalizing PatchWork++...");
+
+        // Setup parameters
+        // Initialize sensor height (laser_offset_z + footprint_offset_z)
+        sensor_height_ =  this->declare_parameter<double>("sensor_height", 1.084);
+        // Number of iterations for ground plane estimation using PCA.
+        num_iter_ =  this->declare_parameter<int>("num_iter", 3);  // urlk 3, urlk launch 3, MF 3
+        // Maximum number of points to be selected as lowest points representative.
+        num_lpr_ = this->declare_parameter<int>("num_lpr", 20);  // urlk 20, urlk launch 20, MF 20
+        // Minimum number of points to be estimated as ground plane in each patch.
+        num_min_pts_ = this->declare_parameter<int>("num_min_pts", 0); // urlkaist default is 15, urlkaist demo.launch.py was set to 0, mikeFerguson default is 10
+
+        // threshold for lowest point representatives using in initial seeds selection of ground points.
+        th_seeds_ = this->declare_parameter<double>("th_seeds", 0.3); // urlk 0.3, urlk launch 0.3, MF 0.4
+        // threshold for thickness of ground.
+        th_dist_ = this->declare_parameter<double>("th_dist", 0.125); // urlk 0.4, urlk launch 0.125, MF 0.3
+        // threshold for lowest point representatives using in initial seeds selection of vertical structural points.
+        th_seeds_v_ = this->declare_parameter<double>("th_seeds_v", 0.25); // urlk 0.25, urlk launch 0.25, MF 0.4
+        // threshold for thickness of vertical structure.
+        th_dist_v_ = this->declare_parameter<double>("th_dist_v", 0.9); // urlk 0.1, urlk launch 0.9, MF 0.3
+        // max_range of ground estimation area
+        max_range_ = this->declare_parameter<double>("max_range", 25.0); // urlk 80.0, urlk launch 80.0, MF 30.0
+        // min_range of ground estimation area
+        min_range_ = this->declare_parameter<double>("min_range", 0.0); // urlk 0.0, urlk launch 0.0, MF 0.1
+        // threshold of uprightness using in Ground Likelihood Estimation(GLE). Please refer paper for more information about GLE.
+        uprightness_thr_ = this->declare_parameter<double>("uprightness_thr", 0.101); // urlk 0.707, urlk launch 0.101, MF 0.5
+        adaptive_seed_selection_margin_ = this->declare_parameter<double>("adaptive_seed_selection_margin", 0.0); // urlk not defined, urlk launch not defined, MF -1.1
+        RNR_ver_angle_thr_ = this->declare_parameter<double>("RNR_ver_angle_thr", -27.0); // urlk -20.0, urlk launch -25, MF -15.0
+        RNR_height_thr_ = this->declare_parameter<double>("RNR_height_thr", 0.25); // new for Firefly
+        RNR_radius_thr_ = this->declare_parameter<double>("RNR_radius_thr", 25.0); // new for Firefly
+        RNR_x_thr_ = this->declare_parameter<double>("RNR_x_thr", 1.0); // new for Firefly
+        RNR_intensity_thr_ = this->declare_parameter<double>("RNR_intensity_thr", 60); // urlk 0.2, urlk launch 0.2, MF 0.2
+        max_flatness_storage_ = this->declare_parameter<int>("max_flatness_storage", 1000); // urlk not defined, urlk launch not defined, MF 1000
+        max_elevation_storage_ = this->declare_parameter<int>("max_elevation_storage", 1000); // urlk not defined, urlk launch not defined, MF 1000
+        enable_RNR_ = this->declare_parameter<bool>("enable_RNR", true);
+        enable_RVPF_ = this->declare_parameter<bool>("enable_RVPF", true);
+        enable_TGR_ = this->declare_parameter<bool>("enable_TGR", true);
+        // display verbose info
+        verbose_  = this->declare_parameter<bool>("verbose", true);
+        // display running_time and pointcloud sizes
+        display_time_ = this->declare_parameter<bool>("display_time", true);
+        frame_id_ = this->declare_parameter<std::string>("frame_id", "base_footprint");
+        
         RCLCPP_INFO_STREAM(this->get_logger(), "Sensor Height: " << sensor_height_);
         RCLCPP_INFO_STREAM(this->get_logger(), "Num of Iteration: " <<  num_iter_);
         RCLCPP_INFO_STREAM(this->get_logger(), "Num of LPR: " <<  num_lpr_);
@@ -135,11 +124,11 @@ public:
         RCLCPP_INFO_STREAM(this->get_logger(), "RNR_radius_thr: " << RNR_radius_thr_);
         RCLCPP_INFO_STREAM(this->get_logger(), "RNR_x_thr: " << RNR_x_thr_);
         RCLCPP_INFO_STREAM(this->get_logger(), "RNR_intensity_thr: " << RNR_intensity_thr_);
-        RCLCPP_INFO_STREAM(this->get_logger(), "Num. zones: " << num_zones_);
-        RCLCPP_INFO_STREAM(this->get_logger(), "cloud_topic: " << cloud_topic);
         RCLCPP_INFO_STREAM(this->get_logger(), "frame_id: " << frame_id_);
-
+        RCLCPP_INFO_STREAM(this->get_logger(), "cloud_topic: " << cloud_topic);
+        
         // CZM denotes 'Concentric Zone Model'. Please refer to our paper
+        num_zones_ = 4;
         num_sectors_each_zone_ = std::vector<long>{32, 32, 16, 24};
         num_rings_each_zone_   = std::vector<long>{16, 8, 10, 16};
         elevation_thr_ = std::vector<double>{0.0, 0.0, 0.0, 0.0};
@@ -217,38 +206,39 @@ private:
     // Every private member variable is written with the undescore("_") in its end.
     std::recursive_mutex mutex_;
 
-    int num_iter_ =  3;
-    int num_lpr_ = 20;
-    int num_min_pts_ = 15 ;
-    int num_zones_ = 4;
+    int num_iter_;
+    int num_lpr_ ;
+    int num_min_pts_; 
+    int num_zones_;
     int num_rings_of_interest_;
-    std::string cloud_topic = "/kitti/point_cloud";
-    std::string frame_id_ = "test";
-    double sensor_height_ =  1.0;
-    double th_seeds_ = 0.3;
-    double th_dist_ = 0.4;
-    double th_seeds_v_ = 0.25;
-    double th_dist_v_ = 0.1;
-    double max_range_ = 80.0;
-    double min_range_ = 0.0;
-    double uprightness_thr_ =  0.707;
-    double adaptive_seed_selection_margin_ = 1.0;
-    double min_range_z2_ = 12.3625; // 12.3625
-    double min_range_z3_ = 22.025; // 22.025
-    double min_range_z4_ = 41.35; // 41.35
-    double RNR_ver_angle_thr_ = -20.0;
-    double RNR_intensity_thr_ = 0.2;
-    double RNR_height_thr_ = 0.25;
-    double RNR_radius_thr_ = 80.0;
-    double RNR_x_thr_ = 1.0;
-    bool verbose_  = false;
-    bool display_time_ = false; // another verbose option, displays running_time
-    bool enable_RNR_ = true;
-    bool enable_RVPF_= true;
-    bool enable_TGR_= true;
 
-    int max_flatness_storage_ = 1000;
-    int max_elevation_storage_ = 1000;
+    std::string cloud_topic = "/kitti/point_cloud";
+    std::string frame_id_;
+
+    double sensor_height_;
+    double th_seeds_;
+    double th_dist_;
+    double th_seeds_v_;
+    double th_dist_v_;
+    double max_range_;
+    double min_range_;
+    double uprightness_thr_;
+    double adaptive_seed_selection_margin_;
+    double min_range_z2_;
+    double min_range_z3_;
+    double min_range_z4_;
+    double RNR_ver_angle_thr_;
+    double RNR_height_thr_;
+    double RNR_radius_thr_;
+    double RNR_x_thr_;
+    double RNR_intensity_thr_;
+    bool verbose_;
+    bool display_time_;
+    bool enable_RNR_;
+    bool enable_RVPF_;
+    bool enable_TGR_;
+
+    int max_flatness_storage_, max_elevation_storage_;
     std::vector<double> update_flatness_[4];
     std::vector<double> update_elevation_[4];
 

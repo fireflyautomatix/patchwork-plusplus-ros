@@ -189,7 +189,6 @@ public:
             ConcentricZoneModel_.push_back(z);
         }
 
-        pub_cloud = Node::create_publisher<sensor_msgs::msg::PointCloud2>("input/pointcloud", 100);
         pub_ground = Node::create_publisher<sensor_msgs::msg::PointCloud2>("ground", 100);
         pub_non_ground = Node::create_publisher<sensor_msgs::msg::PointCloud2>("nonground", 100);
         pub_latency = Node::create_publisher<std_msgs::msg::Int64>("latency", 100); 
@@ -212,7 +211,7 @@ private:
     int num_zones_;
     int num_rings_of_interest_;
 
-    std::string cloud_topic = "/kitti/point_cloud";
+    std::string cloud_topic = "/point_cloud_in";
     std::string frame_id_;
 
     double sensor_height_;
@@ -263,7 +262,7 @@ private:
     vector<Zone> ConcentricZoneModel_;
 
     // ros::Publisher PlaneViz, 
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_revert_pc, pub_reject_pc, pub_normal, pub_noise, pub_vertical, pub_cloud, pub_ground, pub_non_ground;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_revert_pc, pub_reject_pc, pub_normal, pub_noise, pub_vertical, pub_ground, pub_non_ground;
     rclcpp::Publisher<std_msgs::msg::Int64>::SharedPtr pub_latency;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_cloud;
     OnSetParametersCallbackHandle::SharedPtr callback_handle_;
@@ -986,7 +985,6 @@ void PatchWorkpp<PointT>::callbackCloud(const sensor_msgs::msg::PointCloud2::Con
     }
     
     latency.data = static_cast<int64_t>(time_taken*1000.0);
-    pub_cloud->publish(cloud2msg(pc_curr, cloud_msg->header.stamp, cloud_msg->header.frame_id));
     pub_ground->publish(cloud2msg(pc_ground, cloud_msg->header.stamp, cloud_msg->header.frame_id));
     pub_non_ground->publish(cloud2msg(pc_non_ground, cloud_msg->header.stamp, cloud_msg->header.frame_id));
     pub_latency->publish(latency);

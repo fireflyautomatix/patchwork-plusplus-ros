@@ -21,6 +21,7 @@
 #include <patchworkpp/utils.hpp>
 #include "rclcpp_components/register_node_macro.hpp"
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
+#include "std_msgs/msg/int64.hpp"
 
 #define MARKER_Z_VALUE -2.2
 #define UPRIGHT_ENOUGH 0.55
@@ -139,7 +140,7 @@ public:
         RCLCPP_INFO_STREAM(this->get_logger(), "frame_id: " << frame_id_);
 
         // CZM denotes 'Concentric Zone Model'. Please refer to our paper
-        num_sectors_each_zone_ = std::vector<long>{12, 8, 16, 24};
+        num_sectors_each_zone_ = std::vector<long>{32, 32, 16, 24};
         num_rings_each_zone_   = std::vector<long>{16, 8, 10, 16};
         elevation_thr_ = std::vector<double>{0.0, 0.0, 0.0, 0.0};
         flatness_thr_  = std::vector<double>{0.0, 0.0, 0.0, 0.0};
@@ -199,10 +200,11 @@ public:
             ConcentricZoneModel_.push_back(z);
         }
 
-        pub_cloud = Node::create_publisher<sensor_msgs::msg::PointCloud2>("cloud", 100);
+        pub_cloud = Node::create_publisher<sensor_msgs::msg::PointCloud2>("input/pointcloud", 100);
         pub_ground = Node::create_publisher<sensor_msgs::msg::PointCloud2>("ground", 100);
         pub_non_ground = Node::create_publisher<sensor_msgs::msg::PointCloud2>("nonground", 100);
-        sub_cloud = Node::create_subscription<sensor_msgs::msg::PointCloud2>(cloud_topic, rclcpp::SensorDataQoS().keep_last(1), std::bind(&PatchWorkpp<PointT>::callbackCloud, this, std::placeholders::_1));    
+        pub_latency = Node::create_publisher<std_msgs::msg::Int64>("latency", 100); 
+        sub_cloud = Node::create_subscription<sensor_msgs::msg::PointCloud2>(cloud_topic, rclcpp::SensorDataQoS().keep_last(1), std::bind(&PatchWorkpp<PointT>::callbackCloud, this, std::placeholders::_1));  
         callback_handle_ = this->add_on_set_parameters_callback(std::bind(&PatchWorkpp<PointT>::parametersCallback, this, std::placeholders::_1));
 
     };
@@ -272,6 +274,7 @@ private:
 
     // ros::Publisher PlaneViz, 
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_revert_pc, pub_reject_pc, pub_normal, pub_noise, pub_vertical, pub_cloud, pub_ground, pub_non_ground;
+    rclcpp::Publisher<std_msgs::msg::Int64>::SharedPtr pub_latency;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_cloud;
     OnSetParametersCallbackHandle::SharedPtr callback_handle_;
     pcl::PointCloud<PointT> revert_pc_, reject_pc_, noise_pc_, vertical_pc_;
@@ -978,6 +981,7 @@ template<typename PointT> inline
 void PatchWorkpp<PointT>::callbackCloud(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &cloud_msg)
 {
     double time_taken;
+    std_msgs::msg::Int64 latency;
 
     pcl::PointCloud<PointT> pc_curr;
     pcl::PointCloud<PointT> pc_ground;
@@ -990,10 +994,12 @@ void PatchWorkpp<PointT>::callbackCloud(const sensor_msgs::msg::PointCloud2::Con
         RCLCPP_INFO_STREAM(rclcpp::get_logger("patchworkpp"), "\033[1;32m" << "Input PointCloud: " << pc_curr.size() << " -> Ground: " << pc_ground.size() <<  "/ NonGround: " << pc_non_ground.size()
             << " (running_time: " << time_taken << " sec)" << "\033[0m");
     }
-
+    
+    latency.data = static_cast<int64_t>(time_taken*1000.0);
     pub_cloud->publish(cloud2msg(pc_curr, cloud_msg->header.stamp, cloud_msg->header.frame_id));
     pub_ground->publish(cloud2msg(pc_ground, cloud_msg->header.stamp, cloud_msg->header.frame_id));
     pub_non_ground->publish(cloud2msg(pc_non_ground, cloud_msg->header.stamp, cloud_msg->header.frame_id));
+    pub_latency->publish(latency);
 }
 
 template<typename PointT>

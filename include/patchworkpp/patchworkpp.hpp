@@ -104,10 +104,12 @@ public:
         enable_RVPF_ = this->declare_parameter<bool>("enable_RVPF", true);
         enable_TGR_ = this->declare_parameter<bool>("enable_TGR", true);
         // display verbose info
-        verbose_  = this->declare_parameter<bool>("verbose", true);
+        verbose_  = this->declare_parameter<bool>("verbose", false);
         // display running_time and pointcloud sizes
-        display_time_ = this->declare_parameter<bool>("display_time", true);
+        display_time_ = this->declare_parameter<bool>("display_time", false);
         frame_id_ = this->declare_parameter<std::string>("frame_id", "base_footprint");
+        num_rings_ = this->declare_parameter<std::vector<long>>("num_rings", {8, 8, 8, 8});
+        num_sectors_ = this->declare_parameter<std::vector<long>>("num_sectors", {8, 8, 8, 8});
         
         RCLCPP_INFO_STREAM(this->get_logger(), "Sensor Height: " << sensor_height_);
         RCLCPP_INFO_STREAM(this->get_logger(), "Num of Iteration: " <<  num_iter_);
@@ -129,8 +131,8 @@ public:
         
         // CZM denotes 'Concentric Zone Model'. Please refer to our paper
         num_zones_ = 4;
-        num_sectors_each_zone_ = std::vector<long>{32, 32, 16, 24};
-        num_rings_each_zone_   = std::vector<long>{16, 8, 10, 16};
+        num_sectors_each_zone_ = std::vector<long>{num_sectors_[0], num_sectors_[1], num_sectors_[2], num_sectors_[3]};
+        num_rings_each_zone_   = std::vector<long>{num_rings_[0], num_rings_[1], num_rings_[2], num_rings_[3]};
         elevation_thr_ = std::vector<double>{0.0, 0.0, 0.0, 0.0};
         flatness_thr_  = std::vector<double>{0.0, 0.0, 0.0, 0.0};
 
@@ -210,7 +212,9 @@ private:
     int num_min_pts_; 
     int num_zones_;
     int num_rings_of_interest_;
-
+    std::vector<long> num_rings_;
+    std::vector<long> num_sectors_;
+ 
     std::string cloud_topic = "/pointcloud_in";
     std::string frame_id_;
 
@@ -597,7 +601,7 @@ void PatchWorkpp<PointT>::estimate_ground(
                     ( Imagine the geometric relationship between the surface normal vector on the ground plane and
                         the vector connecting the sensor origin and the mean point of the ground plane )
 
-                    However, when the patch is far awaw from the sensor origin,
+                    However, when the patch is far away from the sensor origin,
                     heading could be larger than 0 even if it's ground due to lack of amount of ground plane points.
 
                     Therefore, we only check this value when concentric_idx < num_rings_of_interest ( near condition )

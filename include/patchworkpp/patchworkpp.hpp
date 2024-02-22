@@ -211,7 +211,7 @@ private:
     int num_zones_;
     int num_rings_of_interest_;
 
-    std::string cloud_topic = "/point_cloud_in";
+    std::string cloud_topic = "/pointcloud_in";
     std::string frame_id_;
 
     double sensor_height_;

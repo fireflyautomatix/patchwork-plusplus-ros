@@ -69,47 +69,43 @@ public:
         RCLCPP_INFO_STREAM(this->get_logger(), "Inititalizing PatchWork++...");
 
         // Setup parameters
-        // Initialize sensor height (laser_offset_z + footprint_offset_z)
-        sensor_height_ =  this->declare_parameter<double>("sensor_height", 1.084);
-        // Number of iterations for ground plane estimation using PCA.
-        num_iter_ =  this->declare_parameter<int>("num_iter", 3);  // urlk 3, urlk launch 3, MF 3
-        // Maximum number of points to be selected as lowest points representative.
-        num_lpr_ = this->declare_parameter<int>("num_lpr", 20);  // urlk 20, urlk launch 20, MF 20
-        // Minimum number of points to be estimated as ground plane in each patch.
-        num_min_pts_ = this->declare_parameter<int>("num_min_pts", 0); // urlkaist default is 15, urlkaist demo.launch.py was set to 0, mikeFerguson default is 10
-
-        // threshold for lowest point representatives using in initial seeds selection of ground points.
-        th_seeds_ = this->declare_parameter<double>("th_seeds", 0.3); // urlk 0.3, urlk launch 0.3, MF 0.4
-        // threshold for thickness of ground.
-        th_dist_ = this->declare_parameter<double>("th_dist", 0.125); // urlk 0.4, urlk launch 0.125, MF 0.3
-        // threshold for lowest point representatives using in initial seeds selection of vertical structural points.
-        th_seeds_v_ = this->declare_parameter<double>("th_seeds_v", 0.25); // urlk 0.25, urlk launch 0.25, MF 0.4
-        // threshold for thickness of vertical structure.
-        th_dist_v_ = this->declare_parameter<double>("th_dist_v", 0.9); // urlk 0.1, urlk launch 0.9, MF 0.3
-        // max_range of ground estimation area
-        max_range_ = this->declare_parameter<double>("max_range", 25.0); // urlk 80.0, urlk launch 80.0, MF 30.0
-        // min_range of ground estimation area
-        min_range_ = this->declare_parameter<double>("min_range", 0.0); // urlk 0.0, urlk launch 0.0, MF 0.1
-        // threshold of uprightness using in Ground Likelihood Estimation(GLE). Please refer paper for more information about GLE.
-        uprightness_thr_ = this->declare_parameter<double>("uprightness_thr", 0.101); // urlk 0.707, urlk launch 0.101, MF 0.5
+        sensor_height_ =  this->declare_parameter<double>("sensor_height", 1.084);          // Initialize sensor height
+        num_iter_ =  this->declare_parameter<int>("num_iter", 3);                           // Number of iterations for ground plane estimation using PCA.
+        num_lpr_ = this->declare_parameter<int>("num_lpr", 20);                             // Maximum number of points to be selected as lowest points representative.
+        
+        num_min_pts_ = this->declare_parameter<int>("num_min_pts", 0);                      // Minimum number of points to be estimated as ground plane in each patch.
+        th_seeds_ = this->declare_parameter<double>("th_seeds", 0.3);                       // threshold for lowest point representatives using in initial seeds selection of ground points.
+        th_dist_ = this->declare_parameter<double>("th_dist", 0.125);                       // threshold for thickness of ground.
+        th_seeds_v_ = this->declare_parameter<double>("th_seeds_v", 0.25);                  // threshold for lowest point representatives using in initial seeds selection of vertical structural points.
+        th_dist_v_ = this->declare_parameter<double>("th_dist_v", 0.9);                     // threshold for thickness of vertical structure.
+        num_rings_ = this->declare_parameter<std::vector<long>>("num_rings", {8, 8, 8, 8});
+        num_sectors_ = this->declare_parameter<std::vector<long>>("num_sectors", {8, 8, 8, 8});
         adaptive_seed_selection_margin_ = this->declare_parameter<double>("adaptive_seed_selection_margin", 0.0); // urlk not defined, urlk launch not defined, MF -1.1
-        RNR_ver_angle_thr_ = this->declare_parameter<double>("RNR_ver_angle_thr", -27.0); // urlk -20.0, urlk launch -25, MF -15.0
-        RNR_height_thr_ = this->declare_parameter<double>("RNR_height_thr", 0.25); // new for Firefly
-        RNR_radius_thr_ = this->declare_parameter<double>("RNR_radius_thr", 25.0); // new for Firefly
-        RNR_x_thr_ = this->declare_parameter<double>("RNR_x_thr", 1.0); // new for Firefly
-        RNR_intensity_thr_ = this->declare_parameter<double>("RNR_intensity_thr", 60); // urlk 0.2, urlk launch 0.2, MF 0.2
+
+        max_range_ = this->declare_parameter<double>("max_range", 25.0);                    // max_range of ground estimation area
+        min_range_ = this->declare_parameter<double>("min_range", 0.0);                     // min_range of ground estimation area
+
+        // threshold of uprightness using in Ground Likelihood Estimation(GLE). Please refer paper for more information about GLE.
+        uprightness_thr_ = this->declare_parameter<double>("uprightness_thr", 0.101);       // urlk 0.707, urlk launch 0.101, MF 0.5
+        
+        // RNR params
+        RNR_ver_angle_thr_ = this->declare_parameter<double>("RNR_ver_angle_thr", -27.0);   // urlk -20.0, urlk launch -25, MF -15.0
+        RNR_height_thr_ = this->declare_parameter<double>("RNR_height_thr", 0.25);          // top height for RNR geometry volume
+        RNR_radius_thr_ = this->declare_parameter<double>("RNR_radius_thr", 25.0);          // radius for RNR geometry
+        RNR_x_thr_ = this->declare_parameter<double>("RNR_x_thr", 1.0);                     // front x distance for RNR geometry
+        RNR_intensity_thr_ = this->declare_parameter<double>("RNR_intensity_thr", 60);      // urlk 0.2, urlk launch 0.2, MF 0.2
+        
         max_flatness_storage_ = this->declare_parameter<int>("max_flatness_storage", 1000); // urlk not defined, urlk launch not defined, MF 1000
-        max_elevation_storage_ = this->declare_parameter<int>("max_elevation_storage", 1000); // urlk not defined, urlk launch not defined, MF 1000
+        max_elevation_storage_ = this->declare_parameter<int>("max_elevation_storage", 1000);// urlk not defined, urlk launch not defined, MF 1000
+        
         enable_RNR_ = this->declare_parameter<bool>("enable_RNR", true);
         enable_RVPF_ = this->declare_parameter<bool>("enable_RVPF", true);
         enable_TGR_ = this->declare_parameter<bool>("enable_TGR", true);
-        // display verbose info
-        verbose_  = this->declare_parameter<bool>("verbose", false);
-        // display running_time and pointcloud sizes
-        display_time_ = this->declare_parameter<bool>("display_time", false);
+        
+        verbose_  = this->declare_parameter<bool>("verbose", false);                        // display verbose info
+        display_time_ = this->declare_parameter<bool>("display_time", false);               // display running_time and pointcloud sizes
         frame_id_ = this->declare_parameter<std::string>("frame_id", "base_footprint");
-        num_rings_ = this->declare_parameter<std::vector<long>>("num_rings", {8, 8, 8, 8});
-        num_sectors_ = this->declare_parameter<std::vector<long>>("num_sectors", {8, 8, 8, 8});
+        
         
         RCLCPP_INFO_STREAM(this->get_logger(), "Sensor Height: " << sensor_height_);
         RCLCPP_INFO_STREAM(this->get_logger(), "Num of Iteration: " <<  num_iter_);
@@ -117,6 +113,8 @@ public:
         RCLCPP_INFO_STREAM(this->get_logger(), "Num of min. points: " << num_min_pts_);
         RCLCPP_INFO_STREAM(this->get_logger(), "Seeds Threshold: "<< th_seeds_);
         RCLCPP_INFO_STREAM(this->get_logger(), "Distance Threshold: "<< th_dist_);
+        RCLCPP_INFO_STREAM(this->get_logger(), "Vertical Seeds Threshold: "<< th_seeds_v_);
+        RCLCPP_INFO_STREAM(this->get_logger(), "Vertical Distance Threshold: "<< th_dist_v_);
         RCLCPP_INFO_STREAM(this->get_logger(), "Max. range:: " << max_range_);
         RCLCPP_INFO_STREAM(this->get_logger(), "Min. range:: " << min_range_);
         RCLCPP_INFO_STREAM(this->get_logger(), "Normal vector threshold: " <<  uprightness_thr_);
@@ -193,7 +191,7 @@ public:
 
         pub_ground = Node::create_publisher<sensor_msgs::msg::PointCloud2>("ground", 100);
         pub_non_ground = Node::create_publisher<sensor_msgs::msg::PointCloud2>("nonground", 100);
-        pub_latency = Node::create_publisher<std_msgs::msg::Int64>("latency", 100); 
+        pub_latency = Node::create_publisher<std_msgs::msg::Int64>("ground_segmentation_latency", 100); 
         sub_cloud = Node::create_subscription<sensor_msgs::msg::PointCloud2>(cloud_topic, rclcpp::SensorDataQoS().keep_last(1), std::bind(&PatchWorkpp<PointT>::callbackCloud, this, std::placeholders::_1));  
         callback_handle_ = this->add_on_set_parameters_callback(std::bind(&PatchWorkpp<PointT>::parametersCallback, this, std::placeholders::_1));
 
@@ -998,8 +996,6 @@ template<typename PointT>
 sensor_msgs::msg::PointCloud2 PatchWorkpp<PointT>::cloud2msg(pcl::PointCloud<PointT> cloud, const rclcpp::Time& stamp, std::string frame_id) {
     sensor_msgs::msg::PointCloud2 cloud_ROS;
     pcl::toROSMsg(cloud, cloud_ROS);
-    // cloud_ROS.header.stamp.sec = stamp.seconds();
-    // cloud_ROS.header.stamp.nanosec = stamp.nanoseconds() - stamp.seconds()*1e9;
     cloud_ROS.header.stamp = stamp;
     cloud_ROS.header.frame_id = frame_id_;
     return cloud_ROS;

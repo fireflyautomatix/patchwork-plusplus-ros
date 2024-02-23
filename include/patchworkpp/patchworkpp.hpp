@@ -998,8 +998,9 @@ template<typename PointT>
 sensor_msgs::msg::PointCloud2 PatchWorkpp<PointT>::cloud2msg(pcl::PointCloud<PointT> cloud, const rclcpp::Time& stamp, std::string frame_id) {
     sensor_msgs::msg::PointCloud2 cloud_ROS;
     pcl::toROSMsg(cloud, cloud_ROS);
-    cloud_ROS.header.stamp.sec = stamp.seconds();
-    cloud_ROS.header.stamp.nanosec = stamp.nanoseconds() - stamp.seconds()*1e9;
+    // cloud_ROS.header.stamp.sec = stamp.seconds();
+    // cloud_ROS.header.stamp.nanosec = stamp.nanoseconds() - stamp.seconds()*1e9;
+    cloud_ROS.header.stamp = stamp;
     cloud_ROS.header.frame_id = frame_id_;
     return cloud_ROS;
 }

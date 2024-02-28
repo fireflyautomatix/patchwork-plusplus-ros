@@ -170,6 +170,9 @@ public:
         pub_noise = Node::create_publisher<sensor_msgs::msg::PointCloud2>("noise", 100);
         pub_vertical = Node::create_publisher<sensor_msgs::msg::PointCloud2>("vertical", 100);
 
+        //TODO(andres): add visualization for CZM
+        pub_zones = Node::create_publisher<visualization_msgs::msg::MarkerArray>("patchwork/czm", 1); 
+
         min_range_z2_ = (7 * min_range_ + max_range_) / 8.0;
         min_range_z3_ = (3 * min_range_ + max_range_) / 4.0;
         min_range_z4_ = (min_range_ + max_range_) / 2.0;
@@ -266,6 +269,7 @@ private:
     // ros::Publisher PlaneViz, 
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_revert_pc, pub_reject_pc, pub_normal, pub_noise, pub_vertical, pub_ground, pub_non_ground;
     rclcpp::Publisher<std_msgs::msg::Int64>::SharedPtr pub_latency;
+    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub_zones;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_cloud;
     OnSetParametersCallbackHandle::SharedPtr callback_handle_;
     pcl::PointCloud<PointT> revert_pc_, reject_pc_, noise_pc_, vertical_pc_;
@@ -715,6 +719,14 @@ void PatchWorkpp<PointT>::estimate_ground(
         cloud_ROS.header.stamp = rclcpp::Clock{RCL_STEADY_TIME}.now();
         cloud_ROS.header.frame_id = cloud_in.header.frame_id;
         pub_vertical->publish(cloud_ROS);
+
+        visualization_msgs::msg::MarkerArray my_zones = zone_visualization(
+            min_range_,
+            max_range_,
+            num_sectors_each_zone_,
+            num_rings_each_zone_,
+            cloud_ROS.header);
+        pub_zones->publish(my_zones);
     }
 
     revert_pc_.clear();

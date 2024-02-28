@@ -17,6 +17,7 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/io/pcd_io.h>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include <fstream>
 // CLASSES
@@ -358,4 +359,72 @@ void pc2pcdfile(const pcl::PointCloud<PointXYZILID>& TP, const pcl::PointCloud<P
 }
 
 
+visualization_msgs::msg::Marker make_CZM_zone(
+  std_msgs::msg::Header header,
+  int16_t id, 
+  double radius) {
+    visualization_msgs::msg::Marker zone;
+    zone.header = header;
+    zone.id = id;
+    zone.ns = "default";
+    zone.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    zone.action = visualization_msgs::msg::Marker::ADD;
+    zone.scale.x = 0.05;
+    zone.color.r = 1.0;
+    zone.color.g = 1.0;
+    zone.color.b = 0.0;
+    zone.color.a = 1.0;
+    zone.lifetime = rclcpp::Duration::from_seconds(1);
+
+    int16_t num_points = 32;
+
+    zone.points.clear();
+    zone.points.reserve(num_points);
+
+    for (int i = 0; i <= num_points; i++ ){
+      double theta = i*2*M_PI/num_points;
+      geometry_msgs::msg::Point p;
+      p.x = radius*cos(theta);
+      p.y = radius*sin(theta);
+      p.z = 0.0;
+      zone.points.push_back(p);
+    }
+
+    return zone;
+};
+
+
+visualization_msgs::msg::MarkerArray zone_visualization(
+  double min_range,
+  double max_range,
+  std::vector<long> num_sectors_per_zone,
+  std::vector<long> num_rings_per_zone,
+  std_msgs::msg::Header header){
+
+    std::vector<double> zone_radius_list;
+    zone_radius_list.push_back(min_range);
+    zone_radius_list.push_back((7*min_range +  max_range)/8.0);
+    zone_radius_list.push_back((3*min_range +  max_range)/4.0);
+    zone_radius_list.push_back((min_range +  max_range)/2.0);
+    zone_radius_list.push_back(max_range);
+
+    visualization_msgs::msg::MarkerArray zones;
+    for (int id = 0; id < 5; id++){
+      auto zone = make_CZM_zone(header, id, zone_radius_list[id]);
+      zone.ns = "zone";
+      zones.markers.push_back(zone);
+    }
+
+    // for (int r = 0; r < 4; r++){
+    //   double ring_radius = 
+
+    //   for (int id = 0; id < num_rings_per_zone[r]; id++){
+    //     auto zone = make_CZM_zone(header, id, ring_radius);
+    //     zones.markers.push_back(zone);
+    //   }
+    // }
+
+    return zones;
+
+}
 #endif

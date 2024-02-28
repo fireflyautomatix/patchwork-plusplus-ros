@@ -15,6 +15,7 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(Boost 1.54 REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 add_library(patchworkpp SHARED src/patchworkpp.cpp)
 target_include_directories(patchworkpp
@@ -28,6 +29,7 @@ ament_target_dependencies(patchworkpp
   std_msgs
   sensor_msgs
   rclcpp_components
+  visualization_msgs
 )
 target_link_libraries(patchworkpp
   ${PCL_COMMON_LIBRARIES}

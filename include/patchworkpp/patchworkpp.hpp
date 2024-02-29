@@ -608,7 +608,8 @@ void PatchWorkpp<PointT>::estimate_ground(
                 bool is_upright         = ground_uprightness > uprightness_thr_;
                 bool is_not_elevated    = ground_elevation < elevation_thr_[concentric_idx];
                 bool is_flat            = ground_flatness < flatness_thr_[concentric_idx];
-                bool is_near_zone       = concentric_idx < num_rings_of_interest_; // what is this????
+                bool is_near_zone       = concentric_idx < num_rings_of_interest_;
+                is_near_zone = false;
                 bool is_heading_outside = heading < 0.0;
 
                 /*
@@ -629,7 +630,7 @@ void PatchWorkpp<PointT>::estimate_ground(
                 {
                     cloud_nonground += regionwise_ground_;
                 }
-                else if (!is_near_zone)//failing to be classified here.
+                else if (!is_near_zone)
                 {
                     cloud_ground += regionwise_ground_;
                 }

@@ -102,7 +102,8 @@ public:
         enable_RVPF_ = this->declare_parameter<bool>("enable_RVPF", true);
         enable_TGR_ = this->declare_parameter<bool>("enable_TGR", true);
         
-        verbose_  = this->declare_parameter<bool>("verbose", false);                        // display verbose info
+        visualize_ = this->declare_parameter<bool>("visualize", false);                     // Publish RNR, TGR, vertical pointclouds and CZM
+        verbose_  = this->declare_parameter<bool>("verbose", false);                        // display verbose info to the terminal
         display_time_ = this->declare_parameter<bool>("display_time", false);               // display running_time and pointcloud sizes
         frame_id_ = this->declare_parameter<std::string>("frame_id", "base_footprint");
         
@@ -255,7 +256,7 @@ private:
     Eigen::Vector4f pc_mean_;
 
     // For visualization
-    bool visualize_ = true;
+    bool visualize_;
     vector<long> num_sectors_each_zone_;
     vector<long> num_rings_each_zone_;
     vector<double> sector_sizes_;

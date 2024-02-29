@@ -359,27 +359,22 @@ void pc2pcdfile(const pcl::PointCloud<PointXYZILID>& TP, const pcl::PointCloud<P
 }
 
 
-visualization_msgs::msg::Marker make_CZM_zone(
-  std_msgs::msg::Header header,
-  int16_t id, 
-  double radius) {
-    visualization_msgs::msg::Marker zone;
-    zone.header = header;
-    zone.id = id;
-    zone.ns = "default";
-    zone.type = visualization_msgs::msg::Marker::LINE_STRIP;
-    zone.action = visualization_msgs::msg::Marker::ADD;
-    zone.scale.x = 0.05;
-    zone.color.r = 1.0;
-    zone.color.g = 1.0;
-    zone.color.b = 0.0;
-    zone.color.a = 1.0;
-    zone.lifetime = rclcpp::Duration::from_seconds(1);
+visualization_msgs::msg::Marker make_CZM_circle(double radius) {
+    visualization_msgs::msg::Marker circle;
+    circle.ns = "default";
+    circle.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    circle.action = visualization_msgs::msg::Marker::ADD;
+    circle.scale.x = 0.02;
+    circle.color.r = 1.0;
+    circle.color.g = 1.0;
+    circle.color.b = 0.0;
+    circle.color.a = 0.4;
+    circle.lifetime = rclcpp::Duration::from_seconds(1);
 
     int16_t num_points = 32;
 
-    zone.points.clear();
-    zone.points.reserve(num_points);
+    circle.points.clear();
+    circle.points.reserve(num_points);
 
     for (int i = 0; i <= num_points; i++ ){
       double theta = i*2*M_PI/num_points;
@@ -387,10 +382,44 @@ visualization_msgs::msg::Marker make_CZM_zone(
       p.x = radius*cos(theta);
       p.y = radius*sin(theta);
       p.z = 0.0;
-      zone.points.push_back(p);
+      circle.points.push_back(p);
     }
 
-    return zone;
+    return circle;
+};
+
+visualization_msgs::msg::Marker make_CZM_line(
+  double inner_r, 
+  double outer_r,
+  long num_sectors) {
+    visualization_msgs::msg::Marker lines;
+    lines.ns = "default";
+    lines.type = visualization_msgs::msg::Marker::LINE_LIST;
+    lines.action = visualization_msgs::msg::Marker::ADD;
+    lines.scale.x = 0.02;
+    lines.color.r = 1.0;
+    lines.color.g = 1.0;
+    lines.color.b = 1.0;
+    lines.color.a = 0.4;
+    lines.lifetime = rclcpp::Duration::from_seconds(1);
+
+    lines.points.clear();
+    lines.points.reserve(num_sectors*2);
+
+    for (int i = 0; i <= num_sectors; i++ ){
+      double theta = i*2*M_PI/num_sectors;
+      geometry_msgs::msg::Point inner_p, outer_p;
+      inner_p.x = inner_r*cos(theta);
+      inner_p.y = inner_r*sin(theta);
+      inner_p.z = 0.0;
+      outer_p.x = outer_r*cos(theta);
+      outer_p.y = outer_r*sin(theta);
+      outer_p.z = 0.0;
+      lines.points.push_back(inner_p);
+      lines.points.push_back(outer_p);
+    }
+
+    return lines;
 };
 
 
@@ -408,23 +437,43 @@ visualization_msgs::msg::MarkerArray zone_visualization(
     zone_radius_list.push_back((min_range +  max_range)/2.0);
     zone_radius_list.push_back(max_range);
 
-    visualization_msgs::msg::MarkerArray zones;
+    visualization_msgs::msg::MarkerArray czm;
     for (int id = 0; id < 5; id++){
-      auto zone = make_CZM_zone(header, id, zone_radius_list[id]);
+      auto zone = make_CZM_circle(zone_radius_list[id]);
+      zone.header = header;
+      zone.id = id;
       zone.ns = "zone";
-      zones.markers.push_back(zone);
+      czm.markers.push_back(zone);
     }
 
-    // for (int r = 0; r < 4; r++){
-    //   double ring_radius = 
+    for (int r = 0; r < 4; r++){
+      std::string ring_namespace = "ring" + std::to_string(r);
+      for (int id = 1; id < num_rings_per_zone[r]; id++){
+        double ring_radius = static_cast<double>(id)/static_cast<double>(num_rings_per_zone[r])*(zone_radius_list[r+1]-zone_radius_list[r])+zone_radius_list[r];
+        auto ring = make_CZM_circle(ring_radius);
+        ring.header = header;
+        ring.id = id-1;
+        ring.ns = ring_namespace;
+        ring.color.b = 1.0;
+        czm.markers.push_back(ring);
+      }
+    }
 
-    //   for (int id = 0; id < num_rings_per_zone[r]; id++){
-    //     auto zone = make_CZM_zone(header, id, ring_radius);
-    //     zones.markers.push_back(zone);
-    //   }
-    // }
+    for(int s = 0; s < 4; s++){
+      std::string sector_namespace = "sector" + std::to_string(s);
+      for (int id = 0; id < num_sectors_per_zone[s]; id++){
+        double inner_radius = zone_radius_list[s];
+        double outer_radius = zone_radius_list[s+1];
+        auto sector = make_CZM_line(inner_radius, outer_radius, num_sectors_per_zone[s]);
+        sector.header = header;
+        sector.id = id;
+        sector.ns = sector_namespace;
+        czm.markers.push_back(sector);
+      }
+    }
 
-    return zones;
+
+    return czm;
 
 }
 #endif

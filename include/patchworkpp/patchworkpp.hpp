@@ -78,8 +78,8 @@ public:
         th_dist_ = this->declare_parameter<double>("th_dist", 0.125);                       // threshold for thickness of ground.
         th_seeds_v_ = this->declare_parameter<double>("th_seeds_v", 0.25);                  // threshold for lowest point representatives using in initial seeds selection of vertical structural points.
         th_dist_v_ = this->declare_parameter<double>("th_dist_v", 0.9);                     // threshold for thickness of vertical structure.
-        num_rings_ = this->declare_parameter<std::vector<long>>("num_rings", {8, 8, 8, 8});
-        num_sectors_ = this->declare_parameter<std::vector<long>>("num_sectors", {8, 8, 8, 8});
+        num_rings_each_zone_ = this->declare_parameter<std::vector<long>>("num_rings_each_zone", {8, 8, 8, 8});
+        num_sectors_each_zone_ = this->declare_parameter<std::vector<long>>("num_sectors_each_zone", {8, 8, 8, 8});
         adaptive_seed_selection_margin_ = this->declare_parameter<double>("adaptive_seed_selection_margin", 0.0); // urlk not defined, urlk launch not defined, MF -1.1
 
         max_range_ = this->declare_parameter<double>("max_range", 25.0);                    // max_range of ground estimation area
@@ -130,8 +130,6 @@ public:
         
         // CZM denotes 'Concentric Zone Model'. Please refer to our paper
         num_zones_ = 4;
-        num_sectors_each_zone_ = std::vector<long>{num_sectors_[0], num_sectors_[1], num_sectors_[2], num_sectors_[3]};
-        num_rings_each_zone_   = std::vector<long>{num_rings_[0], num_rings_[1], num_rings_[2], num_rings_[3]};
         elevation_thr_ = std::vector<double>{0.0, 0.0, 0.0, 0.0};
         flatness_thr_  = std::vector<double>{0.0, 0.0, 0.0, 0.0};
 
@@ -214,8 +212,6 @@ private:
     int num_min_pts_; 
     int num_zones_;
     int num_rings_of_interest_;
-    std::vector<long> num_rings_;
-    std::vector<long> num_sectors_;
  
     std::string cloud_topic = "/pointcloud_in";
     std::string frame_id_;

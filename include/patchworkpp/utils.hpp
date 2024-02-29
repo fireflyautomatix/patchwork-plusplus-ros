@@ -367,11 +367,11 @@ visualization_msgs::msg::Marker make_CZM_circle(double radius) {
     circle.scale.x = 0.02;
     circle.color.r = 1.0;
     circle.color.g = 1.0;
-    circle.color.b = 0.0;
+    circle.color.b = 1.0;
     circle.color.a = 0.4;
     circle.lifetime = rclcpp::Duration::from_seconds(1);
 
-    int16_t num_points = 32;
+    int16_t num_points = 64;
 
     circle.points.clear();
     circle.points.reserve(num_points);
@@ -388,7 +388,7 @@ visualization_msgs::msg::Marker make_CZM_circle(double radius) {
     return circle;
 };
 
-visualization_msgs::msg::Marker make_CZM_line(
+visualization_msgs::msg::Marker make_CZM_lines(
   double inner_r, 
   double outer_r,
   long num_sectors) {
@@ -400,7 +400,7 @@ visualization_msgs::msg::Marker make_CZM_line(
     lines.color.r = 1.0;
     lines.color.g = 1.0;
     lines.color.b = 1.0;
-    lines.color.a = 0.4;
+    lines.color.a = 0.015;
     lines.lifetime = rclcpp::Duration::from_seconds(1);
 
     lines.points.clear();
@@ -423,7 +423,7 @@ visualization_msgs::msg::Marker make_CZM_line(
 };
 
 
-visualization_msgs::msg::MarkerArray zone_visualization(
+visualization_msgs::msg::MarkerArray czm_visualization(
   double min_range,
   double max_range,
   std::vector<long> num_sectors_per_zone,
@@ -438,38 +438,37 @@ visualization_msgs::msg::MarkerArray zone_visualization(
     zone_radius_list.push_back(max_range);
 
     visualization_msgs::msg::MarkerArray czm;
-    for (int id = 0; id < 5; id++){
-      auto zone = make_CZM_circle(zone_radius_list[id]);
-      zone.header = header;
-      zone.id = id;
-      zone.ns = "zone";
-      czm.markers.push_back(zone);
-    }
+    for(int z = 0; z < 4; z++){
 
-    for (int r = 0; r < 4; r++){
-      std::string ring_namespace = "ring" + std::to_string(r);
-      for (int id = 1; id < num_rings_per_zone[r]; id++){
-        double ring_radius = static_cast<double>(id)/static_cast<double>(num_rings_per_zone[r])*(zone_radius_list[r+1]-zone_radius_list[r])+zone_radius_list[r];
-        auto ring = make_CZM_circle(ring_radius);
-        ring.header = header;
-        ring.id = id-1;
-        ring.ns = ring_namespace;
-        ring.color.b = 1.0;
-        czm.markers.push_back(ring);
-      }
-    }
-
-    for(int s = 0; s < 4; s++){
-      std::string sector_namespace = "sector" + std::to_string(s);
-      for (int id = 0; id < num_sectors_per_zone[s]; id++){
-        double inner_radius = zone_radius_list[s];
-        double outer_radius = zone_radius_list[s+1];
-        auto sector = make_CZM_line(inner_radius, outer_radius, num_sectors_per_zone[s]);
+      std::string sector_namespace = "sector_" + std::to_string(z);
+      for (int id = 0; id < num_sectors_per_zone[z]; id++){
+        double inner_radius = zone_radius_list[z];
+        double outer_radius = zone_radius_list[z+1];
+        auto sector = make_CZM_lines(inner_radius, outer_radius, num_sectors_per_zone[z]);
         sector.header = header;
         sector.id = id;
         sector.ns = sector_namespace;
         czm.markers.push_back(sector);
       }
+
+      std::string ring_namespace = "ring_" + std::to_string(z);
+      for (int id = 1; id < num_rings_per_zone[z]; id++){
+        double ring_radius = static_cast<double>(id)/static_cast<double>(num_rings_per_zone[z])*(zone_radius_list[z+1]-zone_radius_list[z])+zone_radius_list[z];
+        auto ring = make_CZM_circle(ring_radius);
+        ring.header = header;
+        ring.id = id-1;
+        ring.ns = ring_namespace;
+        czm.markers.push_back(ring);
+      }
+    }
+
+    for (int id = 0; id < 5; id++){
+      auto zone = make_CZM_circle(zone_radius_list[id]);
+      zone.header = header;
+      zone.id = id;
+      zone.ns = "zone";
+      zone.color.a = 1.0;
+      czm.markers.push_back(zone);
     }
 
 

@@ -721,13 +721,13 @@ void PatchWorkpp<PointT>::estimate_ground(
         cloud_ROS.header.frame_id = cloud_in.header.frame_id;
         pub_vertical->publish(cloud_ROS);
 
-        visualization_msgs::msg::MarkerArray my_zones = zone_visualization(
+        visualization_msgs::msg::MarkerArray czm = czm_visualization(
             min_range_,
             max_range_,
             num_sectors_each_zone_,
             num_rings_each_zone_,
             cloud_ROS.header);
-        pub_zones->publish(my_zones);
+        pub_zones->publish(czm);
     }
 
     revert_pc_.clear();

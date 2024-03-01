@@ -883,7 +883,7 @@ void PatchWorkpp<PointT>::extract_piecewiseground(
             extract_initial_seeds(zone_idx, src_wo_verticals, ground_pc_, th_seeds_v_);
             estimate_plane(ground_pc_);
 
-            if (zone_idx == 0 && normal_(2) < uprightness_thr_)
+            if (zone_idx <= 2 && normal_(2) < uprightness_thr_)
             {
                 pcl::PointCloud<PointT> src_tmp;
                 src_tmp = src_wo_verticals;

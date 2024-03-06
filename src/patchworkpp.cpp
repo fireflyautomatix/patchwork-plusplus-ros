@@ -8,15 +8,16 @@
 #include "patchworkpp/patchworkpp.hpp"
 #include <signal.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <ouster_ros/os_point.h>
 
 
-using PointType = pcl::PointXYZI;
+using PointType = ouster_ros::Point;
 using namespace std;
 
 namespace patchworkpp {
-    using PatchworkppPointXYZI = PatchWorkpp<pcl::PointXYZI>;
+    using PatchworkppPointOuster = PatchWorkpp<ouster_ros::Point>;
 }
 
-RCLCPP_COMPONENTS_REGISTER_NODE(patchworkpp::PatchworkppPointXYZI)
+RCLCPP_COMPONENTS_REGISTER_NODE(patchworkpp::PatchworkppPointOuster)
 
 

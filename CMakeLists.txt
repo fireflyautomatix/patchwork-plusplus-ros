@@ -16,6 +16,8 @@ find_package(sensor_msgs REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(Boost 1.54 REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(ouster_ros REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 add_library(patchworkpp SHARED src/patchworkpp.cpp)
 target_include_directories(patchworkpp
@@ -29,6 +31,7 @@ ament_target_dependencies(patchworkpp
   std_msgs
   sensor_msgs
   rclcpp_components
+  ouster_ros
   visualization_msgs
 )
 target_link_libraries(patchworkpp
@@ -36,34 +39,41 @@ target_link_libraries(patchworkpp
   ${PCL_FILTERS_LIBRARIES}
   ${PCL_IO_LIBRARIES}
   ${PCL_KDTREE_LIBRARIES}
+  Eigen3::Eigen
 )
 rclcpp_components_register_node(patchworkpp
-  PLUGIN "patchworkpp::PatchworkppPointXYZI"
-  EXECUTABLE patchworkpp_point_xyzi
+  PLUGIN "patchworkpp::PatchworkppPointOuster"
+  EXECUTABLE patchworkpp_point_ouster
 )
 
-add_executable(demo src/demo.cpp)
-ament_target_dependencies(demo
-  pcl_conversions
-  rclcpp
-)
-target_link_libraries(demo
-  patchworkpp
-)
+# add_executable(demo src/demo.cpp)
+# ament_target_dependencies(demo
+#   rclcpp
+#   pcl_conversions
+#   std_msgs
+#   sensor_msgs
+#   rclcpp_components
+#   ouster_ros
+#   visualization_msgs
+# )
+# target_link_libraries(demo
+#   patchworkpp
+# )
 
 install(TARGETS
   patchworkpp
+  EXPORT ${PROJECT_NAME}Targets
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 
-# ==== Install ====
-install(TARGETS demo
-ARCHIVE
-LIBRARY
-RUNTIME
-DESTINATION lib/${PROJECT_NAME})
+# # ==== Install ====
+# install(TARGETS demo
+# ARCHIVE
+# LIBRARY
+# RUNTIME
+# DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/${PROJECT_NAME}/
 DESTINATION include/${PROJECT_NAME})
@@ -76,4 +86,5 @@ ament_export_dependencies(pcl_conversions)
 ament_export_dependencies(std_msgs)
 ament_export_dependencies(sensor_msgs)
 ament_export_include_directories(${INCLUDE_DIRS})
+ament_export_targets(${PROJECT_NAME}Targets HAS_LIBRARY_TARGET)
 ament_package()

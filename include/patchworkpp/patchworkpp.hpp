@@ -93,7 +93,7 @@ public:
         RNR_height_thr_ = this->declare_parameter<double>("RNR_height_thr", 0.25);          // top height for RNR geometry volume
         RNR_radius_thr_ = this->declare_parameter<double>("RNR_radius_thr", 25.0);          // radius for RNR geometry
         RNR_x_thr_ = this->declare_parameter<double>("RNR_x_thr", 1.0);                     // front x distance for RNR geometry
-        RNR_intensity_thr_ = this->declare_parameter<double>("RNR_intensity_thr", 60);      // urlk 0.2, urlk launch 0.2, MF 0.2
+        RNR_reflectivity_thr_ = this->declare_parameter<double>("RNR_reflectivity_thr", 7); // urlk 0.2, urlk launch 0.2, MF 0.2
         
         max_flatness_storage_ = this->declare_parameter<int>("max_flatness_storage", 1000); // urlk not defined, urlk launch not defined, MF 1000
         max_elevation_storage_ = this->declare_parameter<int>("max_elevation_storage", 1000);// urlk not defined, urlk launch not defined, MF 1000
@@ -124,7 +124,7 @@ public:
         RCLCPP_INFO_STREAM(this->get_logger(), "RNR_height_thr: " << RNR_height_thr_);
         RCLCPP_INFO_STREAM(this->get_logger(), "RNR_radius_thr: " << RNR_radius_thr_);
         RCLCPP_INFO_STREAM(this->get_logger(), "RNR_x_thr: " << RNR_x_thr_);
-        RCLCPP_INFO_STREAM(this->get_logger(), "RNR_intensity_thr: " << RNR_intensity_thr_);
+        RCLCPP_INFO_STREAM(this->get_logger(), "RNR_reflectivity_thr: " << RNR_reflectivity_thr_);
         RCLCPP_INFO_STREAM(this->get_logger(), "frame_id: " << frame_id_);
         RCLCPP_INFO_STREAM(this->get_logger(), "cloud_topic: " << cloud_topic);
         
@@ -232,7 +232,7 @@ private:
     double RNR_height_thr_;
     double RNR_radius_thr_;
     double RNR_x_thr_;
-    double RNR_intensity_thr_;
+    double RNR_reflectivity_thr_;
     bool verbose_;
     bool display_time_;
     bool enable_RNR_;
@@ -408,7 +408,7 @@ void PatchWorkpp<PointT>::reflected_noise_removal(pcl::PointCloud<PointT> &cloud
                                  r < RNR_radius_thr_ &&
                                  cloud_in[i].x < RNR_x_thr_;
 
-        if ( in_geometry && cloud_in[i].intensity < RNR_intensity_thr_)
+        if ( in_geometry && cloud_in[i].reflectivity < RNR_reflectivity_thr_)
         {
             cloud_nonground.push_back(cloud_in[i]);
             noise_pc_.push_back(cloud_in[i]);
@@ -478,9 +478,9 @@ rcl_interfaces::msg::SetParametersResult PatchWorkpp<PointT>::parametersCallback
         {
             RNR_ver_angle_thr_ = param.as_double();
         }
-        if(param.get_name() == "RNR_intensity_thr")
+        if(param.get_name() == "RNR_reflectivity_thr")
         {
-            RNR_intensity_thr_ = param.as_double();
+            RNR_reflectivity_thr_ = param.as_double();
         }
         if(param.get_name() == "num_zones")
         {

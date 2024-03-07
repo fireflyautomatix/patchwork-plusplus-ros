@@ -85,7 +85,7 @@ public:
         RNR_height_thr_ = this->declare_parameter<double>("RNR_height_thr", 0.0);           // top height for RNR geometry
         RNR_radius_thr_ = this->declare_parameter<double>("RNR_radius_thr", 50.0);          // radius limit for RNR geometry
         RNR_x_thr_ = this->declare_parameter<double>("RNR_x_thr", 50.0);                    // x distance for RNR geometry
-        RNR_reflectivity_thr_ = this->declare_parameter<double>("RNR_reflectivity_thr", 20);// reflectivity threshold for RNR, can be replaced with intensity with minor edits
+        RNR_reflectivity_thr_ = this->declare_parameter<int>("RNR_reflectivity_thr", 20);// reflectivity threshold for RNR, can be replaced with intensity with minor edits
         
         max_flatness_storage_ = this->declare_parameter<int>("max_flatness_storage", 1000); 
         max_elevation_storage_ = this->declare_parameter<int>("max_elevation_storage", 1000);
@@ -223,7 +223,7 @@ private:
     double RNR_height_thr_;
     double RNR_radius_thr_;
     double RNR_x_thr_;
-    double RNR_reflectivity_thr_;
+    int RNR_reflectivity_thr_;
     bool verbose_;
     bool display_time_;
     bool enable_RNR_;

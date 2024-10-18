@@ -85,7 +85,8 @@ public:
         RNR_height_thr_ = this->declare_parameter<double>("RNR_height_thr", 0.0);           // top height for RNR geometry
         RNR_radius_thr_ = this->declare_parameter<double>("RNR_radius_thr", 50.0);          // radius limit for RNR geometry
         RNR_x_thr_ = this->declare_parameter<double>("RNR_x_thr", 50.0);                    // x distance for RNR geometry
-        RNR_reflectivity_thr_ = this->declare_parameter<int>("RNR_reflectivity_thr", 20);// reflectivity threshold for RNR, can be replaced with intensity with minor edits
+        RNR_reflectivity_thr_ = this->declare_parameter<int>("RNR_reflectivity_thr", 20);   // reflectivity threshold for RNR
+        RNR_intensity_thr_ = this->declare_parameter<double>("RNR_intensity_thr", 20);      // intensity threshold for RNR
         
         max_flatness_storage_ = this->declare_parameter<int>("max_flatness_storage", 1000); 
         max_elevation_storage_ = this->declare_parameter<int>("max_elevation_storage", 1000);
@@ -117,6 +118,7 @@ public:
         RCLCPP_INFO_STREAM(this->get_logger(), "RNR_radius_thr: " << RNR_radius_thr_);
         RCLCPP_INFO_STREAM(this->get_logger(), "RNR_x_thr: " << RNR_x_thr_);
         RCLCPP_INFO_STREAM(this->get_logger(), "RNR_reflectivity_thr: " << RNR_reflectivity_thr_);
+        RCLCPP_INFO_STREAM(this->get_logger(), "RNR_intensity_thr: " << RNR_intensity_thr_);
         RCLCPP_INFO_STREAM(this->get_logger(), "frame_id: " << frame_id_);
         
         // CZM denotes 'Concentric Zone Model'. Please refer to our paper
@@ -224,6 +226,7 @@ private:
     double RNR_radius_thr_;
     double RNR_x_thr_;
     int RNR_reflectivity_thr_;
+    double RNR_intensity_thr_;
     bool verbose_;
     bool display_time_;
     bool enable_RNR_;
@@ -373,10 +376,13 @@ void PatchWorkpp<PointT>::extract_initial_seeds(
         cnt++;
     }
     double lpr_height = cnt != 0 ? sum / cnt : 0;// in case divide by 0
+    // average of all point heights of surrounding patches
+    // double lpr_height = 
 
     // iterate pointcloud, filter those height is less than lpr.height+th_seed
     for (int i = 0; i < p_sorted.points.size(); i++) {
-        if (p_sorted.points[i].z < lpr_height + th_seed) {
+        //TODO(andres): make lpr_height plus OR minus th_seed 
+        if (p_sorted.points[i].z < lpr_height + th_seed) { 
             init_seeds.points.push_back(p_sorted.points[i]);
         }
     }
@@ -395,7 +401,7 @@ void PatchWorkpp<PointT>::reflected_noise_removal(pcl::PointCloud<PointT> &cloud
                                  r < RNR_radius_thr_ &&
                                  cloud_in[i].x < RNR_x_thr_;
 
-        if ( in_geometry && cloud_in[i].reflectivity < RNR_reflectivity_thr_)
+        if ( in_geometry && (cloud_in[i].reflectivity < RNR_reflectivity_thr_ || cloud_in[i].intensity < RNR_intensity_thr_))
         {
             cloud_nonground.push_back(cloud_in[i]);
             noise_pc_.push_back(cloud_in[i]);
@@ -776,11 +782,11 @@ void PatchWorkpp<PointT>::extract_piecewiseground(
         }
     }
 
-    extract_initial_seeds(zone_idx, src_wo_verticals, ground_pc_, th_seeds_);
-    estimate_plane(ground_pc_);
 
     // 2. Region-wise Ground Plane Fitting (R-GPF)
     // : fits the ground plane
+    extract_initial_seeds(zone_idx, src_wo_verticals, ground_pc_, th_seeds_);
+    estimate_plane(ground_pc_);
 
     //pointcloud to matrix
     Eigen::MatrixXf points(src_wo_verticals.points.size(), 3);
